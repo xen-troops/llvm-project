@@ -1049,6 +1049,7 @@ FormatStyle getXenStyle() {
   XenStyle.AlwaysBreakTemplateDeclarations = FormatStyle::BTDS_No;
   XenStyle.BreakBeforeBraces = FormatStyle::BS_Xen;
   XenStyle.BreakStringLiterals = false;
+  XenStyle.ColumnLimit = 79;
   XenStyle.ForEachMacros.push_back("foreach");
   XenStyle.ForEachMacros.push_back("item_foreach");
   XenStyle.ForEachMacros.push_back("hash_vcpu_foreach");
