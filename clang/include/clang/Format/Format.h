@@ -700,6 +700,32 @@ struct FormatStyle {
     ///   enum X : int { A, B };
     /// \endcode
     BS_WebKit,
+    /// Like ``Allman``, but do not break do/while loop.
+    /// \code
+    ///   try
+    ///   {
+    ///     foo();
+    ///   }
+    ///   catch ()
+    ///   {
+    ///   }
+    ///   void foo()
+    ///   {
+    ///     bar();
+    ///   }
+    ///   class foo
+    ///   {
+    ///   };
+    ///   if (foo())
+    ///   {
+    ///   }
+    ///   else
+    ///   {
+    ///   }
+    ///   do {
+    ///   } while ();
+    /// \endcode
+    BS_Xen,
     /// Configure each individual brace in `BraceWrapping`.
     BS_Custom
   };
@@ -759,6 +785,20 @@ struct FormatStyle {
     ///   }
     /// \endcode
     bool AfterControlStatement;
+    /// Wrap do/while loop.
+    /// \code
+    ///   true:
+    ///   do
+    ///   {
+    ///     foo();
+    ///   } while();
+    ///
+    ///   false:
+    ///   do {
+    ///     foo();
+    ///   } while();
+    /// \endcode
+    bool AfterDoWhileStatement;
     /// Wrap enum definitions.
     /// \code
     ///   true:
@@ -1802,6 +1842,14 @@ struct FormatStyle {
   /// \endcode
   bool SpacesInCStyleCastParentheses;
 
+  /// If ``true``, spaces will be inserted after first ``(`` and before
+  /// last ``)`` in loops and condition only.
+  /// \code
+  ///    true:                                  false:
+  ///    if ( (condition) )             vs.     if ((condition))
+  /// \endcode
+  bool SpacesInLoopsAndConditionParenthesesOnly;
+
   /// If ``true``, spaces will be inserted after ``(`` and before ``)``.
   /// \code
   ///    true:                                  false:
@@ -2019,6 +2067,18 @@ FormatStyle getWebKitStyle();
 /// Returns a format style complying with GNU Coding Standards:
 /// http://www.gnu.org/prep/standards/standards.html
 FormatStyle getGNUStyle();
+
+/// Returns a format style complying with Xen Coding Standards:
+///
+FormatStyle getXenStyle();
+
+/// Returns a format style complying with Libxenlight Coding Standards:
+///
+FormatStyle getLibxlStyle();
+
+/// Returns a format style complying with Linux kernel Coding Standards:
+/// https://www.kernel.org/doc/html/v4.10/process/coding-style.html
+FormatStyle getLinuxStyle();
 
 /// Returns style indicating formatting should be not applied at all.
 FormatStyle getNoStyle();

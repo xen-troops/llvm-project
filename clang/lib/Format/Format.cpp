@@ -157,6 +157,7 @@ template <> struct ScalarEnumerationTraits<FormatStyle::BraceBreakingStyle> {
     IO.enumCase(Value, "Allman", FormatStyle::BS_Allman);
     IO.enumCase(Value, "GNU", FormatStyle::BS_GNU);
     IO.enumCase(Value, "WebKit", FormatStyle::BS_WebKit);
+    IO.enumCase(Value, "Xen", FormatStyle::BS_Xen);
     IO.enumCase(Value, "Custom", FormatStyle::BS_Custom);
   }
 };
@@ -302,7 +303,8 @@ template <> struct MappingTraits<FormatStyle> {
 
     if (IO.outputting()) {
       StringRef StylesArray[] = {"LLVM",   "Google", "Chromium", "Mozilla",
-                                 "WebKit", "GNU",    "Microsoft"};
+                                 "WebKit", "GNU",    "Microsoft", "Xen",
+                                 "Libxenlight", "Linux"};
       ArrayRef<StringRef> Styles(StylesArray);
       for (size_t i = 0, e = Styles.size(); i < e; ++i) {
         StringRef StyleName(Styles[i]);
@@ -500,6 +502,8 @@ template <> struct MappingTraits<FormatStyle> {
                    Style.SpacesInContainerLiterals);
     IO.mapOptional("SpacesInCStyleCastParentheses",
                    Style.SpacesInCStyleCastParentheses);
+    IO.mapOptional("SpacesInLoopsAndConditionParenthesesOnly",
+                   Style.SpacesInLoopsAndConditionParenthesesOnly);
     IO.mapOptional("SpacesInParentheses", Style.SpacesInParentheses);
     IO.mapOptional("SpacesInSquareBrackets", Style.SpacesInSquareBrackets);
     IO.mapOptional("Standard", Style.Standard);
@@ -514,6 +518,7 @@ template <> struct MappingTraits<FormatStyle::BraceWrappingFlags> {
     IO.mapOptional("AfterCaseLabel", Wrapping.AfterCaseLabel);
     IO.mapOptional("AfterClass", Wrapping.AfterClass);
     IO.mapOptional("AfterControlStatement", Wrapping.AfterControlStatement);
+    IO.mapOptional("AfterDoWhileStatement", Wrapping.AfterDoWhileStatement);
     IO.mapOptional("AfterEnum", Wrapping.AfterEnum);
     IO.mapOptional("AfterFunction", Wrapping.AfterFunction);
     IO.mapOptional("AfterNamespace", Wrapping.AfterNamespace);
@@ -605,7 +610,7 @@ static FormatStyle expandPresets(const FormatStyle &Style) {
     return Style;
   FormatStyle Expanded = Style;
   Expanded.BraceWrapping = {false, false, false, false, false, false,
-                            false, false, false, false, false,
+                            false, false, false, false, false, false,
                             false, false, true,  true,  true};
   switch (Style.BreakBeforeBraces) {
   case FormatStyle::BS_Linux:
@@ -632,6 +637,7 @@ static FormatStyle expandPresets(const FormatStyle &Style) {
     Expanded.BraceWrapping.AfterCaseLabel = true;
     Expanded.BraceWrapping.AfterClass = true;
     Expanded.BraceWrapping.AfterControlStatement = true;
+    Expanded.BraceWrapping.AfterDoWhileStatement = true;
     Expanded.BraceWrapping.AfterEnum = true;
     Expanded.BraceWrapping.AfterFunction = true;
     Expanded.BraceWrapping.AfterNamespace = true;
@@ -642,8 +648,23 @@ static FormatStyle expandPresets(const FormatStyle &Style) {
     Expanded.BraceWrapping.BeforeElse = true;
     break;
   case FormatStyle::BS_GNU:
-    Expanded.BraceWrapping = {true, true, true, true, true, true, true, true,
+    Expanded.BraceWrapping = {true, true, true, true, true, true, true, true, true,
                               true, true, true, true, true, true, true, true};
+    break;
+  case FormatStyle::BS_Xen:
+    Expanded.BraceWrapping.AfterCaseLabel = true;
+    Expanded.BraceWrapping.AfterClass = true;
+    Expanded.BraceWrapping.AfterControlStatement = true;
+    Expanded.BraceWrapping.AfterDoWhileStatement = false;
+    Expanded.BraceWrapping.AfterEnum = true;
+    Expanded.BraceWrapping.AfterFunction = true;
+    Expanded.BraceWrapping.AfterNamespace = true;
+    Expanded.BraceWrapping.AfterObjCDeclaration = true;
+    Expanded.BraceWrapping.AfterStruct = true;
+    Expanded.BraceWrapping.AfterExternBlock = true;
+    Expanded.BraceWrapping.BeforeCatch = true;
+    Expanded.BraceWrapping.BeforeElse = true;
+    Expanded.BraceWrapping.IndentBraces = false;
     break;
   case FormatStyle::BS_WebKit:
     Expanded.BraceWrapping.AfterFunction = true;
@@ -683,7 +704,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.BreakBeforeTernaryOperators = true;
   LLVMStyle.BreakBeforeBraces = FormatStyle::BS_Attach;
   LLVMStyle.BraceWrapping = {false, false, false, false, false, false,
-                             false, false, false, false, false,
+                             false, false, false, false, false, false,
                              false, false, true,  true,  true};
   LLVMStyle.BreakAfterJavaFieldAnnotations = false;
   LLVMStyle.BreakConstructorInitializers = FormatStyle::BCIS_BeforeColon;
@@ -727,6 +748,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.Standard = FormatStyle::LS_Cpp11;
   LLVMStyle.UseTab = FormatStyle::UT_Never;
   LLVMStyle.ReflowComments = true;
+  LLVMStyle.SpacesInLoopsAndConditionParenthesesOnly = false;
   LLVMStyle.SpacesInParentheses = false;
   LLVMStyle.SpacesInSquareBrackets = false;
   LLVMStyle.SpaceInEmptyParentheses = false;
@@ -1018,6 +1040,106 @@ FormatStyle getMicrosoftStyle(FormatStyle::LanguageKind Language) {
   return Style;
 }
 
+FormatStyle getXenStyle() {
+  FormatStyle XenStyle = getLLVMStyle();
+  XenStyle.AccessModifierOffset = 0;
+  XenStyle.AlignEscapedNewlines = FormatStyle::ENAS_Left;
+  XenStyle.AllowShortFunctionsOnASingleLine = FormatStyle::SFS_None;
+  XenStyle.AllowShortLambdasOnASingleLine = FormatStyle::SLS_None;
+  XenStyle.AlwaysBreakTemplateDeclarations = FormatStyle::BTDS_No;
+  XenStyle.BreakBeforeBraces = FormatStyle::BS_Xen;
+  XenStyle.ForEachMacros.push_back("foreach");
+  XenStyle.ForEachMacros.push_back("item_foreach");
+  XenStyle.ForEachMacros.push_back("hash_vcpu_foreach");
+  XenStyle.ForEachMacros.push_back("hash_domain_foreach");
+  XenStyle.ForEachMacros.push_back("foreach_pinned_shadow");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_entry_rcu");
+  XenStyle.ForEachMacros.push_back("hlist_for_each");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_safe");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_entry");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_entry_from");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_entry_safe");
+  XenStyle.ForEachMacros.push_back("hlist_for_each_entry_continue");
+  XenStyle.ForEachMacros.push_back("for_each_cpu");
+  XenStyle.ForEachMacros.push_back("for_each_possible_cpu");
+  XenStyle.ForEachMacros.push_back("for_each_online_cpu");
+  XenStyle.ForEachMacros.push_back("for_each_present_cpu");
+  XenStyle.ForEachMacros.push_back("for_each_set_bit");
+  XenStyle.ForEachMacros.push_back("ebitmap_for_each_positive_bit");
+  XenStyle.ForEachMacros.push_back("for_each_vcpu");
+  XenStyle.ForEachMacros.push_back("for_each_affinity_balance_step");
+  XenStyle.ForEachMacros.push_back("list_for_each");
+  XenStyle.ForEachMacros.push_back("for_each_kimage_entry");
+  XenStyle.ForEachMacros.push_back("page_list_for_each");
+  XenStyle.ForEachMacros.push_back("list_for_each_entry");
+  XenStyle.ForEachMacros.push_back("list_for_each_safe");
+  XenStyle.ForEachMacros.push_back("dt_for_each_device_node");
+  XenStyle.ForEachMacros.push_back("for_each_domain");
+  XenStyle.ForEachMacros.push_back("for_each_drhd_unit");
+  XenStyle.ForEachMacros.push_back("for_each_rmrr_device");
+  XenStyle.ForEachMacros.push_back("for_each_pdev");
+  XenStyle.ForEachMacros.push_back("for_each_amd_iommu");
+  XenStyle.ForEachMacros.push_back("tapdisk_vbd_for_each_request");
+  XenStyle.ForEachMacros.push_back("tapdisk_vbd_for_each_image");
+  XenStyle.ForEachMacros.push_back("scheduler_for_each_event");
+  XenStyle.ForEachMacros.push_back("for_each_memblk");
+  XenStyle.ForEachMacros.push_back("libxl_for_each_set_bit");
+  XenStyle.IndentWidth = 4;
+  XenStyle.KeepEmptyLinesAtTheStartOfBlocks = false;
+  XenStyle.PointerAlignment = FormatStyle::PAS_Right;
+  XenStyle.Standard = FormatStyle::LS_Cpp03;
+  XenStyle.SortIncludes = false;
+  XenStyle.SortUsingDeclarations = false;
+  XenStyle.SpacesInContainerLiterals = false;
+  XenStyle.SpaceAfterTemplateKeyword = false;
+  XenStyle.SpaceBeforeCtorInitializerColon = false;
+  XenStyle.SpaceBeforeInheritanceColon = false;
+  XenStyle.SpaceBeforeRangeBasedForLoopColon = false;
+  XenStyle.SpacesInLoopsAndConditionParenthesesOnly = true;
+  XenStyle.TabWidth = 4;
+  return XenStyle;
+}
+
+FormatStyle getLibxlStyle() {
+  FormatStyle LibxlStyle = getLLVMStyle();
+  LibxlStyle.AccessModifierOffset = 0;
+  LibxlStyle.AlignEscapedNewlines = FormatStyle::ENAS_Left;
+  LibxlStyle.AllowAllParametersOfDeclarationOnNextLine = false;
+  LibxlStyle.AllowShortIfStatementsOnASingleLine = FormatStyle::SIS_Always;
+  LibxlStyle.AllowShortFunctionsOnASingleLine = FormatStyle::SFS_None;
+  LibxlStyle.BreakBeforeBraces = FormatStyle::BS_Linux;
+  LibxlStyle.ConstructorInitializerIndentWidth = 4;
+  LibxlStyle.ContinuationIndentWidth = 4;
+  LibxlStyle.IndentWidth = 4;
+  LibxlStyle.KeepEmptyLinesAtTheStartOfBlocks = false;
+  LibxlStyle.SortIncludes = false;
+  LibxlStyle.SortUsingDeclarations = false;
+  LibxlStyle.SpacesInContainerLiterals = false;
+  LibxlStyle.Standard = FormatStyle::LS_Cpp03;
+  LibxlStyle.TabWidth = 4;
+  return LibxlStyle;
+}
+
+FormatStyle getLinuxStyle() {
+  FormatStyle LinuxStyle = getLLVMStyle();
+  LinuxStyle.AccessModifierOffset = 0;
+  LinuxStyle.AlignEscapedNewlines = FormatStyle::ENAS_Left;
+  LinuxStyle.AllowAllParametersOfDeclarationOnNextLine = false;
+  LinuxStyle.AllowShortFunctionsOnASingleLine = FormatStyle::SFS_None;
+  LinuxStyle.BreakBeforeBraces = FormatStyle::BS_Linux;
+  LinuxStyle.ConstructorInitializerIndentWidth = 8;
+  LinuxStyle.ContinuationIndentWidth = 8;
+  LinuxStyle.IndentWidth = 8;
+  LinuxStyle.KeepEmptyLinesAtTheStartOfBlocks = false;
+  LinuxStyle.SortIncludes = false;
+  LinuxStyle.SortUsingDeclarations = false;
+  LinuxStyle.SpacesInContainerLiterals = false;
+  LinuxStyle.Standard = FormatStyle::LS_Cpp03;
+  LinuxStyle.TabWidth = 8;
+  LinuxStyle.UseTab = FormatStyle::UT_Always;
+  return LinuxStyle;
+}
+
 FormatStyle getNoStyle() {
   FormatStyle NoStyle = getLLVMStyle();
   NoStyle.DisableFormat = true;
@@ -1042,6 +1164,12 @@ bool getPredefinedStyle(StringRef Name, FormatStyle::LanguageKind Language,
     *Style = getGNUStyle();
   } else if (Name.equals_lower("microsoft")) {
     *Style = getMicrosoftStyle(Language);
+  } else if (Name.equals_lower("xen")) {
+    *Style = getXenStyle();
+  } else if (Name.equals_lower("libxl")) {
+    *Style = getLibxlStyle();
+  } else if (Name.equals_lower("linux")) {
+    *Style = getLinuxStyle();
   } else if (Name.equals_lower("none")) {
     *Style = getNoStyle();
   } else {
@@ -2377,7 +2505,8 @@ LangOptions getFormattingLangOpts(const FormatStyle &Style) {
 
 const char *StyleOptionHelpDescription =
     "Coding style, currently supports:\n"
-    "  LLVM, Google, Chromium, Mozilla, WebKit.\n"
+    "  LLVM, Google, Chromium, Mozilla, WebKit,\n"
+    "  Xen, Libxl, Linux.\n"
     "Use -style=file to load style configuration from\n"
     ".clang-format file located in one of the parent\n"
     "directories of the source file (or current\n"

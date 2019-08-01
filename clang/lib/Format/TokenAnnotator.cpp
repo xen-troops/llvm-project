@@ -2478,11 +2478,18 @@ bool TokenAnnotator::spaceRequiredBetween(const AnnotatedLine &Line,
     return Right.is(tok::hash);
   if (Left.is(tok::l_paren) && Right.is(tok::r_paren))
     return Style.SpaceInEmptyParentheses;
-  if (Left.is(tok::l_paren) || Right.is(tok::r_paren))
-    return (Right.is(TT_CastRParen) ||
-            (Left.MatchingParen && Left.MatchingParen->is(TT_CastRParen)))
-               ? Style.SpacesInCStyleCastParentheses
-               : Style.SpacesInParentheses;
+  if (Left.is(tok::l_paren) || Right.is(tok::r_paren)) {
+    if (Right.is(TT_CastRParen) || ((Left.MatchingParen &&
+                                    Left.MatchingParen->is(TT_CastRParen))))
+      return Style.SpacesInCStyleCastParentheses;
+    else
+      return (Left.Previous &&
+        Left.Previous->isOneOf(tok::kw_if, tok::kw_for, tok::kw_while)) ||
+        (Right.MatchingParen && Right.MatchingParen->Previous &&
+         Right.MatchingParen->Previous->isOneOf(tok::kw_if, tok::kw_for, tok::kw_while))
+          ? Style.SpacesInLoopsAndConditionParenthesesOnly
+          : Style.SpacesInParentheses;
+  }
   if (Right.isOneOf(tok::semi, tok::comma))
     return false;
   if (Right.is(tok::less) && Line.Type == LT_ObjCDecl) {
