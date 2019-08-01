@@ -1048,6 +1048,7 @@ FormatStyle getXenStyle() {
   XenStyle.AllowShortLambdasOnASingleLine = FormatStyle::SLS_None;
   XenStyle.AlwaysBreakTemplateDeclarations = FormatStyle::BTDS_No;
   XenStyle.BreakBeforeBraces = FormatStyle::BS_Xen;
+  XenStyle.BreakStringLiterals = false;
   XenStyle.ForEachMacros.push_back("foreach");
   XenStyle.ForEachMacros.push_back("item_foreach");
   XenStyle.ForEachMacros.push_back("hash_vcpu_foreach");
