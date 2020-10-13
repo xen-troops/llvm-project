@@ -879,6 +879,32 @@ struct FormatStyle {
     ///   enum X : int { A, B };
     /// \endcode
     BS_WebKit,
+    /// Like ``Allman``, but do not break do/while loop.
+    /// \code
+    ///   try
+    ///   {
+    ///     foo();
+    ///   }
+    ///   catch ()
+    ///   {
+    ///   }
+    ///   void foo()
+    ///   {
+    ///     bar();
+    ///   }
+    ///   class foo
+    ///   {
+    ///   };
+    ///   if (foo())
+    ///   {
+    ///   }
+    ///   else
+    ///   {
+    ///   }
+    ///   do {
+    ///   } while ();
+    /// \endcode
+    BS_Xen,
     /// Configure each individual brace in `BraceWrapping`.
     BS_Custom
   };
@@ -2553,6 +2579,18 @@ FormatStyle getWebKitStyle();
 /// Returns a format style complying with GNU Coding Standards:
 /// http://www.gnu.org/prep/standards/standards.html
 FormatStyle getGNUStyle();
+
+/// Returns a format style complying with Xen Coding Standards:
+///
+FormatStyle getXenStyle();
+
+/// Returns a format style complying with Libxenlight Coding Standards:
+///
+FormatStyle getLibxlStyle();
+
+/// Returns a format style complying with Linux kernel Coding Standards:
+/// https://www.kernel.org/doc/html/v4.10/process/coding-style.html
+FormatStyle getLinuxStyle();
 
 /// Returns a format style complying with Microsoft style guide:
 /// https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference?view=vs-2017
